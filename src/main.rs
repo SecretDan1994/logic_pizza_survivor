@@ -88,15 +88,16 @@ fn main() {
         .add_system(advance_state.in_set(OnUpdate(GameState::StartingLoop)))
         .add_system(despawn_game_play.in_schedule(OnEnter(GameState::GameOver)))
         .add_startup_system(spawn_coin_assets)
+        .add_startup_system(spawn_magnet)
         .add_startup_system(start_music)
         .run();
 }
 fn start_music(audio: Res<Audio>, assets: Res<AssetServer>) {
     audio.play_with_settings(
-        assets.load("background.wav"),
+        assets.load("background.mp3"),
         PlaybackSettings {
             repeat: true,
-            volume: 0.5,
+            volume: 0.25,
             speed: 1.0,
         },
     );
@@ -107,6 +108,12 @@ fn spawn_coin_assets(mut commands: Commands, assets: Res<AssetServer>) {
         image_1: assets.load("coin_1.png"),
         image_2: assets.load("coin_2.png"),
         audio: assets.load("coin.wav"),
+    })
+}
+
+fn spawn_magnet(mut commands: Commands, assets: Res<AssetServer>){
+    commands.insert_resource(MagnetAssets {
+        image_1: assets.load("magnet.png"),
     })
 }
 

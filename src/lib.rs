@@ -6,6 +6,7 @@ mod exp;
 mod player;
 mod ui;
 mod upgrade;
+mod magnet;
 
 pub mod prelude {
     use strum_macros::EnumIter;
@@ -71,6 +72,37 @@ pub mod prelude {
         pub collecting: bool,
     }
 
+    impl ExpOrb{
+        pub fn set_collection_speed(&mut self, speed:f32){
+            self.collection_speed = speed;
+        }
+    }
+
+    #[derive(Bundle)]
+    pub struct MagnetBundle {
+        #[bundle]
+        pub sprite: SpriteBundle,
+        pub magnet: Magnet,
+        pub collider: Collider,
+        pub game_play: GamePlayEntity,
+        pub sensor: Sensor,
+    }
+
+    #[derive(Component)]
+    pub struct Magnet{
+        pub active: bool,
+    }
+
+    #[derive(Resource)]
+    pub struct MagnetActive {
+        pub time_active: Timer,
+    }
+
+    #[derive(Resource)]
+    pub struct MagnetAssets {
+        pub image_1: Handle<Image>,
+    }
+
     #[derive(Component)]
     pub struct TwoFrameAnimation {
         pub frame_1: Handle<Image>,
@@ -100,6 +132,7 @@ pub mod prelude {
         pub health: f32,
         pub max_health: f32,
         pub facing: Facing,
+        pub pickup_range: f32,
     }
 
     pub enum Facing {

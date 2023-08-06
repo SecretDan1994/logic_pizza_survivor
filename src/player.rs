@@ -15,6 +15,8 @@ impl Plugin for PlayerPlugin {
                     player_gain_exp,
                     player_level_up,
                     player_game_over,
+                    player_magnet_pickup,
+                    player_magnet,
                 )
                     .in_set(OnUpdate(GameState::Gameplay)),
             );
@@ -98,10 +100,14 @@ fn player_gain_exp(
 
     for (entity, transform, orb) in &orbs {
         //TODO probably should use physics for this
+        // if player.pickup_range > 3.0 {
+        //     orb.collection_speed = 15.0;
+        // }
+
         if Vec2::distance(
             transform.translation.truncate(),
             player_transform.translation.truncate(),
-        ) < 0.3
+        ) < player.pickup_range
         {
             //TODO event for sound
             player.exp += orb.value;
@@ -114,6 +120,62 @@ fn player_gain_exp(
                 },
             );
             commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
+fn player_magnet_pickup(
+    player: Query<(&Transform, &Collider), With<Player>>,
+    rapier_context: Res<RapierContext>,
+    mut magnets: Query<&mut Magnet>,
+) {
+    let (transform, collider) = player.single();
+
+    rapier_context.intersections_with_shape(
+        transform.translation.truncate(),
+        0.0,
+        collider,
+        QueryFilter::new(),
+        |entity| {
+            if let Ok(mut magnet) = magnets.get_mut(entity) {
+                magnet.active = true;
+            }
+            true
+        },
+    );
+}
+
+fn player_magnet(
+    mut commands: Commands,
+    magnets: Query<(Entity, &Transform, &Magnet)>,
+    magnet_asset: Res<AssetServer>,
+    audio: Res<Audio>,
+    mut player: Query<(&Transform, &mut Player), Without<Magnet>>,
+) {
+    let (player_transform, mut player) = player.single_mut();
+
+    for (entity, transform, magnet) in &magnets {
+        if magnet.active{
+            if Vec2::distance(
+                transform.translation.truncate(),
+                player_transform.translation.truncate(),
+            ) < 3.0 {
+                audio.play_with_settings(
+                    magnet_asset.load("magnet.mp3"),
+                    PlaybackSettings {
+                        repeat: false,
+                        volume: 0.5,
+                        speed: 1.5,
+                    },
+                );
+
+                //Pickup Range Logic.
+                commands.insert_resource(MagnetActive{
+                    time_active : Timer::from_seconds(3.0, TimerMode::Once),
+                });
+                player.pickup_range = 15.0;
+                commands.entity(entity).despawn_recursive();
+            }
         }
     }
 }
@@ -141,10 +203,11 @@ fn spawn_player(mut commands: Commands, assets: Res<AssetServer>) {
                 exp: 0,
                 next_level_exp: 5,
                 level: 1,
-                speed: 3.0,
+                speed: 15.0,
                 health: 100.0,
                 max_health: 100.0,
                 facing: Facing::Left,
+                pickup_range: 3.0,
             },
             Name::new("Player"),
             Collider::ball(0.9),

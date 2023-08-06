@@ -164,6 +164,14 @@ fn enemy_death_check(
                         timer: Timer::from_seconds(0.3, TimerMode::Repeating),
                     },
                 ));
+            } else if rng.f32() > 0.9 {
+                let mut magnet = MagnetBundle::default();
+                magnet.sprite.texture = assets.load("magnet.png");
+                magnet.sprite.transform.translation.x = transform.translation.x;
+                magnet.sprite.transform.translation.y = transform.translation.y;
+                commands.spawn((
+                    magnet,
+                ));
             }
         }
     }
